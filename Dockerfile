@@ -1,42 +1,24 @@
-#———stage1 - jar builder ————-
+#get Base image  for maven building
+FROM maven:3.8.3-openjdk-17 AS builder
 
-# Maven image
-
-FROM maven:3.8.3-openjdk-17 AS builder 
-
-# Set working directory
-
+# Make a  directory for app 
 WORKDIR /app
 
-# Copy source code from local to container
+# Copy everything from files
+copy . .
 
-COPY . /app
-
-# Build application and skip test cases
-
-#EXPOSE 8080
-
+# Build maven for jar files
 RUN mvn clean install -DskipTests=true
 
-#ENTRYPOINT ["java", "-jar", "/expenseapp.jar"]
-
-#--------------------------------------
-# Stage 2 - app build
-#--------------------------------------
-
-# Import small size java image
+# Get base image to run java app
 
 FROM openjdk:17-alpine
 
-WORKDIR /app 
-
-# Copy build from stage 1 (builder)
-
+#copy previous build files form builder
 COPY --from=builder /app/target/*.jar /app/target/expenseapp.jar
 
-# Expose application port 
-
+#expose a port to run
 EXPOSE 8080
 
-# Start the application
-ENTRYPOINT ["java", "-jar", "/app/target/expenseapp.jar"]
+#Entry point to app
+ENTRYPOINT [ "java","-jar","/app/target/expenseapp.jar" ]

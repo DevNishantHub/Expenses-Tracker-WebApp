@@ -1,37 +1,43 @@
 version: "3.8"
 services:
   mysql:
-    image: mysql:latest
+    image: mysql:8.0
     container_name: mysql
     environment:
       MYSQL_ROOT_PASSWORD: Test@123
       MYSQL_DATABASE: expenses_tracker
+      MYSQL_USER: expuser
+      MYSQL_PASSWORD: Test@123
+    ports:
+      - "3307:3306"
     volumes:
-      - ./mysql-data:/var/lib/mysql
+      - mysql-data:/var/lib/mysql
     networks:
       - appbridge
     healthcheck:
-      test: ["CMD","mysqladmin","ping","-h","localhost","-uroot","-pTest@123"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-authentication-plugin=mysql_native_password
     restart: always
 
   mainapp:
-    image: snehcreate/expensetracker_v3
+    build: .
     container_name: Expensetracker
     environment:
       SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/expenses_tracker?allowPublicKeyRetrieval=true&useSSL=false"
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/expenses_tracker?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_PASSWORD: Test@123
     ports:
       - "8080:8080"
     networks:
       - appbridge
     depends_on:
-      - mysql
-    restart: always
+      mysql:
+        condition: service_healthy
+    restart: on-failure
 
 networks:
   appbridge:
